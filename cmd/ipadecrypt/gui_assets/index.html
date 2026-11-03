@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="window_title">ipadecrypt webGUI — FairPlay App Store Decrypter</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Header / Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">ipadecrypt <span class="badge-gui">webGUI</span><span id="brand-version" class="brand-version" style="display:none"></span></span>
+        <span class="brand-subtitle" data-i18n="app_subtitle">Công cụ giải mã IPA FairPlay từ App Store</span>
+      </div>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="nav-actions">
+      <!-- Active Account Pill -->
+      <div id="account-status-pill" class="account-pill" onclick="switchTab('account')">
+        <span class="status-dot"></span>
+        <span id="account-status-text" data-i18n="auth_checking">Đang kiểm tra tài khoản...</span>
+      </div>
+
+      <!-- Theme Switcher -->
+      <button id="theme-toggle" class="icon-btn" title="Chuyển giao diện sáng/tối" onclick="toggleTheme()" data-i18n-title="theme_toggle_title">
+        <svg id="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <svg id="theme-icon-light" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+      </button>
+
+      <!-- Language Toggle (VI / EN only) -->
+      <button id="lang-toggle" class="btn btn-outline btn-sm" onclick="toggleLanguage()" title="Chuyển ngôn ngữ / Switch language">
+        <span id="lang-label">VI</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="tabs-nav">
+    <div class="tabs-container">
+      <button class="tab-btn active" data-tab="decrypt" onclick="switchTab('decrypt')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+        </svg>
+        <span data-i18n="tab_decrypt">Giải mã IPA</span>
+      </button>
+
+      <button class="tab-btn" data-tab="search" onclick="switchTab('search')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <span data-i18n="tab_search">Tìm kiếm App Store</span>
+      </button>
+
+      <button class="tab-btn" data-tab="versions" onclick="switchTab('versions')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline>
+        </svg>
+        <span data-i18n="tab_versions">Lịch sử phiên bản</span>
+      </button>
+
+      <button class="tab-btn" data-tab="device" onclick="switchTab('device')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+        <span data-i18n="tab_device">Thiết bị & Mint</span>
+      </button>
+
+      <button class="tab-btn" data-tab="files" onclick="switchTab('files')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span data-i18n="tab_files">Tệp đã giải mã</span>
+        <span id="files-badge" class="badge" style="display:none">0</span>
+      </button>
+
+      <button class="tab-btn" data-tab="account" onclick="switchTab('account')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <span data-i18n="tab_account">Tài khoản Apple ID</span>
+      </button>
+
+      <button class="tab-btn" data-tab="guide" onclick="switchTab('guide')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span data-i18n="tab_guide">Hướng dẫn</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="main-content">
+    <!-- Active Decrypt Job Banner -->
+    <div id="active-jobs-banner" class="active-jobs-card" style="display:none">
+      <div class="active-job-header">
+        <div class="active-job-title-row">
+          <span class="spinner-sm"></span>
+          <span id="active-job-title" class="font-semibold text-primary" data-i18n="job_decrypting">Đang giải mã ứng dụng...</span>
+        </div>
+        <span id="active-job-speed" class="text-sm text-secondary font-mono"></span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div id="active-job-bar" class="progress-bar-fill" style="width:0%"></div>
+      </div>
+      <div class="active-job-footer">
+        <span id="active-job-stage" class="text-sm text-secondary"></span>
+        <button class="btn btn-outline btn-xs" onclick="cancelActiveJob()" data-i18n="btn_cancel">Hủy</button>
+      </div>
+    </div>
+
+    <!-- TAB 1: Main Decrypt Dashboard -->
+    <section id="tab-decrypt" class="tab-content active">
+      <div class="grid-2col">
+        <!-- Input & Options Column -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title" data-i18n="decrypt_title">Giải mã FairPlay</h3>
+            <p class="card-desc" data-i18n="decrypt_desc">Giải mã ứng dụng App Store ngoại tuyến (offline arm64) hoặc giải mã trên thiết bị Jailbreak (cho app 32-bit).</p>
+          </div>
+          <div class="card-body">
+            <!-- Source Selector -->
+            <div class="form-group">
+              <label class="form-label" data-i18n="lbl_source_type">Nguồn IPA:</label>
+              <div class="flex-gap">
+                <button id="btn-src-store" class="btn btn-primary btn-sm flex-1" onclick="selectSourceMode('store')" data-i18n="btn_src_store">
+                  Tải từ App Store
+                </button>
+                <button id="btn-src-local" class="btn btn-outline btn-sm flex-1" onclick="selectSourceMode('local')" data-i18n="btn_src_local">
+                  File IPA có sẵn
+                </button>
+              </div>
+            </div>
+
+            <!-- App Store Input Fields -->
+            <div id="src-store-fields">
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_bundle_or_id">Bundle ID, App ID hoặc URL App Store:</label>
+                <input type="text" id="decrypt-target" class="form-input" placeholder="e.g. com.spotify.client hoặc 324684580" data-i18n-placeholder="ph_decrypt_target">
+              </div>
+
+              <div class="form-group">
+                <div class="flex-between">
+                  <label class="form-label" data-i18n="lbl_version_id">Phiên bản ID (--external-version-id):</label>
+                  <button type="button" class="help-btn" onclick="openOptionHelp('version_id')" title="Xem chi tiết">?</button>
+                </div>
+                <input type="text" id="decrypt-version-id" class="form-input" placeholder="Để trống = lấy bản mới nhất" data-i18n-placeholder="ph_decrypt_version">
+              </div>
+
+              <div class="form-group">
+                <div class="flex-between">
+                  <label class="form-label" data-i18n="lbl_storefront">Storefront Quốc gia (--storefront):</label>
+                  <button type="button" class="help-btn" onclick="openOptionHelp('storefront')" title="Xem chi tiết">?</button>
+                </div>
+                <input type="text" id="decrypt-storefront" class="form-input" placeholder="e.g. 143441 hoặc US, VN (Để trống = mặc định theo tài khoản)" data-i18n-placeholder="ph_decrypt_storefront">
+              </div>
+            </div>
+
+            <!-- Local File Input Fields -->
+            <div id="src-local-fields" style="display:none">
+              <div id="ipa-drop-zone" class="drop-zone" onclick="document.getElementById('local-ipa-file').click()">
+                <input type="file" id="local-ipa-file" accept=".ipa" style="display:none" onchange="handleLocalFileSelected(this.files[0])">
+                <div class="state-icon mb-2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="34" height="34" style="margin:0 auto; color:var(--accent-primary)">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                </div>
+                <p id="drop-zone-text" class="font-semibold text-sm" data-i18n="drop_zone_prompt">Nhấn để chọn file hoặc kéo thả file .ipa vào đây</p>
+                <span id="selected-file-info" class="text-sm text-secondary mt-1 block"></span>
+              </div>
+            </div>
+
+            <!-- Advanced Decryption Options (True to ipadecrypt flags) -->
+            <div class="options-group">
+              <div class="flex-between mb-2">
+                <span class="font-semibold text-sm text-primary" data-i18n="lbl_decrypt_options">Tùy chọn giải mã của ipadecrypt:</span>
+              </div>
+              
+              <div class="form-group mb-2">
+                <div class="flex-between">
+                  <label class="form-label" data-i18n="lbl_decrypt_mode">Chế độ giải mã:</label>
+                  <button type="button" class="help-btn" onclick="openOptionHelp('decrypt_mode')" title="Xem chi tiết">?</button>
+                </div>
+                <select id="decrypt-mode" class="form-select">
+                  <option value="auto" data-i18n="opt_mode_auto">Tự động (Offline FairPlay arm64, fallback máy Jailbreak nếu 32-bit)</option>
+                  <option value="on-device" data-i18n="opt_mode_on_device">Bắt buộc giải mã trên máy Jailbreak (--on-device)</option>
+                  <option value="no-on-device" data-i18n="opt_mode_no_on_device">Chỉ giải mã offline, không dùng máy (--no-on-device)</option>
+                </select>
+              </div>
+
+              <div class="option-row-with-help">
+                <label class="form-checkbox">
+                  <input type="checkbox" id="opt-patch-device-type">
+                  <span data-i18n="opt_patch_device_type">Mở rộng UIDeviceFamily để app cài được trên máy khác loại (--patch-device-type)</span>
+                </label>
+                <button type="button" class="help-btn" onclick="openOptionHelp('patch_device_type')" title="Xem chi tiết">?</button>
+              </div>
+
+              <div class="option-row-with-help">
+                <label class="form-checkbox">
+                  <input type="checkbox" id="opt-skip-appex">
+                  <span data-i18n="opt_skip_appex">Bỏ qua tiện ích mở rộng PlugIns/*.appex (--skip-appex)</span>
+                </label>
+                <button type="button" class="help-btn" onclick="openOptionHelp('skip_appex')" title="Xem chi tiết">?</button>
+              </div>
+
+              <div class="option-row-with-help">
+                <label class="form-checkbox">
+                  <input type="checkbox" id="opt-extra-verify">
+                  <span data-i18n="opt_extra_verify">Kiểm tra Mach-O nâng cao byte-compare với file gốc (--extra-verify)</span>
+                </label>
+                <button type="button" class="help-btn" onclick="openOptionHelp('extra_verify')" title="Xem chi tiết">?</button>
+              </div>
+
+              <div class="option-row-with-help">
+                <label class="form-checkbox">
+                  <input type="checkbox" id="opt-no-verify">
+                  <span data-i18n="opt_no_verify">Bỏ qua bước kiểm tra Mach-O cryptid (--no-verify)</span>
+                </label>
+                <button type="button" class="help-btn" onclick="openOptionHelp('no_verify')" title="Xem chi tiết">?</button>
+              </div>
+            </div>
+
+            <button id="btn-start-decrypt" class="btn btn-primary btn-block mt-4" onclick="triggerDecryption()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+              </svg>
+              <span data-i18n="btn_start_decrypt">Bắt đầu giải mã FairPlay</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Status & Output Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title" data-i18n="lbl_job_monitor">Giám sát tiến trình giải mã</h3>
+            <p class="card-desc" data-i18n="lbl_job_monitor_desc">Thông tin chi tiết các bước xử lý và nhật ký theo thời gian thực.</p>
+          </div>
+          <div class="card-body">
+            <div id="decrypt-live-box" class="bg-secondary p-3 rounded-md border" style="min-height: 200px;">
+              <div id="decrypt-empty-log" class="text-center py-8 text-secondary text-sm" data-i18n="decrypt_empty_log">
+                Chưa có tác vụ giải mã nào đang chạy. Nhập thông tin bên trái và nhấn "Bắt đầu giải mã FairPlay".
+              </div>
+              
+              <div id="decrypt-active-log" style="display:none">
+                <div class="flex-between mb-2">
+                  <span id="log-app-name" class="font-bold text-primary text-base"></span>
+                  <span id="log-app-badge" class="badge badge-primary"></span>
+                </div>
+                <div id="log-app-bundle" class="text-sm text-secondary font-mono mb-3"></div>
+                
+                <div class="progress-bar-wrap">
+                  <div id="log-progress-bar" class="progress-bar-fill" style="width:0%"></div>
+                </div>
+
+                <div class="flex-between text-sm text-secondary mt-1 mb-3">
+                  <span id="log-stage-text"></span>
+                  <span id="log-speed-text" class="font-mono"></span>
+                </div>
+
+                <div id="log-result-box" class="mt-3 p-3 rounded-md bg-elevated border" style="display:none">
+                  <div class="font-semibold text-sm text-success flex-gap mb-1">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span data-i18n="decrypt_success_title">Giải mã hoàn tất thành công!</span>
+                  </div>
+                  <div id="log-file-name" class="text-sm text-secondary font-mono mb-3"></div>
+                  <div class="flex-gap">
+                    <button class="btn btn-outline btn-sm" onclick="openOutputFolder()" data-i18n="btn_open_folder">Mở thư mục lưu file</button>
+                    <a id="log-download-btn" class="btn btn-primary btn-sm" href="#" download data-i18n="btn_download_ipa">Tải file IPA về máy</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: App Store Search -->
+    <section id="tab-search" class="tab-content">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title" data-i18n="search_title">Tìm kiếm trên App Store</h3>
+          <p class="card-desc" data-i18n="search_desc">Tra cứu thông tin ứng dụng để giải mã hoặc xem danh sách các bản phát hành lịch sử.</p>
+        </div>
+        <div class="card-body">
+          <div class="search-input-group">
+            <input type="text" id="search-input" class="form-input search-field" placeholder="Tìm tên ứng dụng, từ khóa hoặc Bundle ID..." onkeydown="if(event.key==='Enter') doSearch()" data-i18n-placeholder="ph_search_input">
+            <select id="search-country" class="form-select search-country-select">
+              <option value="VN" selected>VN (Việt Nam)</option>
+              <option value="US">US (United States)</option>
+              <option value="JP">JP (Japan)</option>
+              <option value="KR">KR (Korea)</option>
+              <option value="GB">GB (United Kingdom)</option>
+              <option value="DE">DE (Germany)</option>
+              <option value="FR">FR (France)</option>
+              <option value="CN">CN (China)</option>
+            </select>
+            <button id="search-btn" class="btn btn-primary" onclick="doSearch()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <span data-i18n="btn_search">Tìm kiếm</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="search-loading" class="center-state" style="display:none">
+        <div class="spinner"></div>
+        <p class="mt-3 text-secondary text-sm" data-i18n="search_loading">Đang tìm kiếm trên App Store...</p>
+      </div>
+
+      <div id="search-empty" class="center-state">
+        <h3 class="text-base font-bold" data-i18n="search_welcome_title">Tra cứu ứng dụng App Store</h3>
+        <p class="text-secondary text-sm mt-1" data-i18n="search_welcome_desc">Nhập tên hoặc Bundle ID vào ô tìm kiếm để tra cứu nhanh.</p>
+      </div>
+
+      <div id="search-results-grid" class="cards-grid" style="display:none"></div>
+    </section>
+
+    <!-- TAB 3: Version History -->
+    <section id="tab-versions" class="tab-content">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title" data-i18n="versions_title">Lịch sử phiên bản App Store</h3>
+          <p class="card-desc" data-i18n="versions_desc">Xem toàn bộ các bản phát hành lịch sử của ứng dụng và giải mã bản cũ tùy ý (lệnh ipadecrypt versions).</p>
+        </div>
+        <div class="card-body">
+          <div class="search-input-group">
+            <input type="text" id="versions-target" class="form-input search-field" placeholder="Nhập Bundle ID (e.g. com.spotify.client) hoặc App ID..." onkeydown="if(event.key==='Enter') lookupVersions()" data-i18n-placeholder="ph_versions_target">
+            <button class="btn btn-primary" onclick="lookupVersions()">
+              <span data-i18n="btn_check_versions">Xem phiên bản</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="versions-loading" class="center-state" style="display:none">
+        <div class="spinner"></div>
+        <p class="mt-3 text-secondary text-sm" data-i18n="versions_loading">Đang tải danh sách phiên bản từ App Store...</p>
+      </div>
+
+      <div id="versions-results-wrap" class="card" style="display:none">
+        <div class="card-header flex-between">
+          <div>
+            <h3 id="versions-app-name" class="card-title"></h3>
+            <span id="versions-app-bundle" class="text-sm text-secondary font-mono"></span>
+          </div>
+          <span id="versions-count" class="badge badge-primary"></span>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th data-i18n="th_version_id">Version ID</th>
+                <th data-i18n="th_display_version">Phiên bản hiển thị</th>
+                <th data-i18n="th_release_date">Ngày phát hành</th>
+                <th data-i18n="th_action">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="versions-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: Device & Credential Minting -->
+    <section id="tab-device" class="tab-content">
+      <div class="grid-2col">
+        <!-- Device Configuration -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title" data-i18n="device_title">Cấu hình thiết bị Jailbreak</h3>
+            <p class="card-desc" data-i18n="device_desc">Dùng để tạo chứng chỉ FairPlay 1 lần cho tài khoản hoặc giải mã các app 32-bit (ipadecrypt bootstrap).</p>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-checkbox">
+                <input type="checkbox" id="dev-usb" onchange="toggleDeviceUSBMode()">
+                <span data-i18n="lbl_device_usb">Kết nối qua cáp USB (sử dụng iproxy)</span>
+              </label>
+            </div>
+
+            <div id="dev-network-fields">
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_device_host">Địa chỉ IP thiết bị (Wi-Fi):</label>
+                <input type="text" id="dev-host" class="form-input" placeholder="e.g. 192.168.1.100">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_device_port">Cổng SSH (Mặc định 22):</label>
+                <input type="number" id="dev-port" class="form-input" value="22">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" data-i18n="lbl_device_user">Tài khoản SSH (Mặc định root):</label>
+              <input type="text" id="dev-user" class="form-input" value="root">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" data-i18n="lbl_device_password">Mật khẩu SSH (Mặc định alpine):</label>
+              <input type="password" id="dev-password" class="form-input" value="alpine">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" data-i18n="lbl_device_udid">UDID thiết bị (Tùy chọn khi dùng USB):</label>
+              <input type="text" id="dev-udid" class="form-input" placeholder="Tùy chọn nếu cắm nhiều thiết bị" data-i18n-placeholder="ph_device_udid">
+            </div>
+
+            <div class="flex-gap mt-4">
+              <button class="btn btn-primary" onclick="saveDeviceConfig()" data-i18n="btn_save_config">Lưu cấu hình</button>
+              <button class="btn btn-outline" onclick="testDeviceConnection()" data-i18n="btn_test_connection">Kiểm tra kết nối</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Credential Minting & Test Status -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title" data-i18n="mint_title">Chứng chỉ FairPlay & Kiểm tra</h3>
+            <p class="card-desc" data-i18n="mint_desc">Tạo chứng chỉ 16-byte duy nhất 1 lần để giải mã ngoại tuyến vĩnh viễn.</p>
+          </div>
+          <div class="card-body">
+            <!-- Active Account Status Card -->
+            <div class="bg-secondary p-3 rounded-md mb-3 border">
+              <div class="flex-between">
+                <div>
+                  <span class="text-xs text-secondary block" data-i18n="lbl_target_account">Tài khoản mục tiêu:</span>
+                  <span id="mint-account-email" class="font-semibold text-primary text-sm"></span>
+                </div>
+                <div id="mint-account-badge"></div>
+              </div>
+            </div>
+
+            <button id="btn-mint-cred" class="btn btn-primary btn-block mb-3" onclick="startMintCredential()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"></path>
+              </svg>
+              <span data-i18n="btn_mint_now">Tạo chứng chỉ FairPlay (Mint Credential)</span>
+            </button>
+
+            <!-- Test Connection Results Container -->
+            <div id="device-test-results" class="border rounded-md mt-3" style="display:none">
+              <div class="p-3 bg-secondary font-semibold text-sm border-b" data-i18n="lbl_connection_check">Kết quả kiểm tra thiết bị:</div>
+              <div id="device-test-checks-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: Decrypted Files -->
+    <section id="tab-files" class="tab-content">
+      <div class="card">
+        <div class="card-header flex-between">
+          <div>
+            <h3 class="card-title" data-i18n="files_title">Tệp IPA đã giải mã</h3>
+            <p id="files-output-dir-label" class="card-desc font-mono"></p>
+          </div>
+          <div class="flex-gap">
+            <button class="btn btn-outline btn-sm" onclick="openOutputFolder()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span data-i18n="btn_open_folder">Mở thư mục trong Explorer</span>
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="loadDecryptedFiles()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              <span data-i18n="btn_refresh">Làm mới</span>
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="files-empty" class="center-state" style="display:none">
+            <p class="text-secondary text-sm" data-i18n="files_empty">Chưa có file IPA giải mã nào trong thư mục.</p>
+          </div>
+          <div class="table-container">
+            <table class="data-table" id="files-table">
+              <thead>
+                <tr>
+                  <th data-i18n="th_file_name">Tên tệp</th>
+                  <th data-i18n="th_file_size">Kích thước</th>
+                  <th data-i18n="th_date">Ngày tạo</th>
+                  <th data-i18n="th_action">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="files-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: Apple ID Accounts -->
+    <section id="tab-account" class="tab-content">
+      <div class="grid-2col">
+        <!-- Accounts List -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title" data-i18n="accounts_list_title">Danh sách tài khoản Apple ID</h3>
+            <p class="card-desc" data-i18n="accounts_list_desc">Hỗ trợ nhiều tài khoản độc lập. Nhấn "Kích hoạt" để chuyển tài khoản sử dụng.</p>
+          </div>
+          <div class="card-body">
+            <div id="accounts-cards-list" class="flex-col gap-3"></div>
+          </div>
+        </div>
+
+        <!-- Add Account Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title" data-i18n="add_account_title">Thêm tài khoản Apple ID</h3>
+            <p class="card-desc" data-i18n="add_account_desc">Đăng nhập Apple ID để tải ứng dụng và tạo chứng chỉ giải mã.</p>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label" data-i18n="lbl_apple_email">Email Apple ID:</label>
+              <input type="email" id="login-email" class="form-input" placeholder="example@icloud.com">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" data-i18n="lbl_apple_password">Mật khẩu Apple ID:</label>
+              <input type="password" id="login-password" class="form-input" placeholder="••••••••">
+            </div>
+
+            <button id="btn-login" class="btn btn-primary btn-block mt-4" onclick="doLogin()">
+              <span data-i18n="btn_login">Đăng nhập</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 7: Guide -->
+    <section id="tab-guide" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title" data-i18n="guide_title">Hướng dẫn sử dụng ipadecrypt</h3>
+          <p class="card-desc" data-i18n="guide_desc">Tìm hiểu cách ipadecrypt giải mã FairPlay và cách thiết lập.</p>
+        </div>
+        <div id="guide-body" class="card-body leading-relaxed text-sm"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 2FA Modal Dialog -->
+  <div id="modal-2fa" class="modal-backdrop" style="display:none">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" data-i18n="modal_2fa_title">Xác thực hai yếu tố (2FA)</h3>
+      </div>
+      <div class="modal-body">
+        <p class="text-secondary text-sm mb-3" data-i18n="modal_2fa_desc">Apple đã gửi mã xác thực 6 chữ số đến thiết bị tin cậy của bạn. Vui lòng nhập mã vào bên dưới:</p>
+        <div class="form-group">
+          <input type="text" id="input-2fa-code" class="form-input text-center text-lg font-mono font-bold" maxlength="6" placeholder="000000" onkeydown="if(event.key==='Enter') submit2FACode()">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline btn-sm" onclick="close2FAModal()" data-i18n="btn_cancel">Hủy</button>
+        <button class="btn btn-primary btn-sm" onclick="submit2FACode()" data-i18n="btn_verify">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Minting Modal Dialog -->
+  <div id="modal-mint" class="modal-backdrop" style="display:none">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" data-i18n="modal_mint_title">Đang tạo chứng chỉ FairPlay</h3>
+      </div>
+      <div class="modal-body text-center py-5">
+        <div class="spinner mb-3"></div>
+        <p id="mint-modal-status" class="text-secondary text-sm font-medium" data-i18n="modal_mint_desc">Đang kết nối đến thiết bị Jailbreak qua SSH để trích xuất khóa 16-byte...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option Help Modal Dialog (?) -->
+  <div id="modal-option-help" class="modal-backdrop" style="display:none" onclick="if(event.target===this) closeOptionHelp()">
+    <div class="modal-card modal-help-card">
+      <div class="modal-header flex-between">
+        <div class="flex-gap">
+          <div class="brand-icon" style="width:28px;height:28px;border-radius:6px;font-size:0.85rem;font-weight:bold;">?</div>
+          <h3 id="help-modal-title" class="modal-title text-base font-bold"></h3>
+        </div>
+        <button type="button" class="icon-btn btn-xs" onclick="closeOptionHelp()" title="Đóng">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="help-modal-flag-wrap" class="mb-3">
+          <span class="text-xs text-secondary font-semibold" data-i18n="lbl_help_flag">Tham số CLI:</span>
+          <code id="help-modal-flag" class="badge badge-primary font-mono text-xs ml-1"></code>
+        </div>
+
+        <div class="help-section mb-3">
+          <div class="text-xs font-semibold text-secondary mb-1" data-i18n="lbl_help_effect">Tác dụng & Ý nghĩa:</div>
+          <div id="help-modal-effect" class="text-sm text-primary leading-relaxed bg-input p-3 rounded-md border"></div>
+        </div>
+
+        <div class="help-section mb-3">
+          <div class="text-xs font-semibold text-secondary mb-1" data-i18n="lbl_help_usage">Khi nào nên dùng:</div>
+          <div id="help-modal-usage" class="text-sm text-secondary leading-relaxed bg-input p-3 rounded-md border"></div>
+        </div>
+
+        <div id="help-modal-notes-wrap" class="help-section">
+          <div class="text-xs font-semibold text-warning mb-1" data-i18n="lbl_help_notes">Lưu ý:</div>
+          <div id="help-modal-notes" class="text-sm text-secondary leading-relaxed bg-input p-3 rounded-md border"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm" onclick="closeOptionHelp()" data-i18n="btn_close">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

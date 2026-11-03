@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: ipadecrypt
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: ipadecrypt
+    main: ./cmd/ipadecrypt
+    binary: ipadecrypt
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - arm64
+      - amd64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.Version=v{{.Version}}
+
+archives:
+  - formats: binary
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-dev"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"
+
+release:
+  # Owner/name auto-detected from CI environment (GITHUB_REPOSITORY).
+  draft: false
+  prerelease: auto

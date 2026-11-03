@@ -1,0 +1,11 @@
+*.ipa
+*.exe
+.claude
+dist/
+.grepai/
+.DS_Store
+
+# Vendored reference clones (untracked research sources)
+fairplay-decrypt/
+ipatool/
+.serena/
