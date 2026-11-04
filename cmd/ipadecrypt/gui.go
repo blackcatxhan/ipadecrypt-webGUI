@@ -158,6 +158,7 @@ func guiHandler(cmd *cobra.Command, args []string) {
 
 	// Search & Versions
 	mux.HandleFunc("/api/search", handleAPISearch)
+	mux.HandleFunc("/api/app/check-license", handleAPICheckLicense)
 	mux.HandleFunc("/api/versions", handleAPIVersions)
 	mux.HandleFunc("/api/version-metadata", handleAPIVersionMetadata)
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -19,6 +20,8 @@ type SearchAppResult struct {
 	Version          string   `json:"version"`
 	Price            float64  `json:"price"`
 	FormattedPrice   string   `json:"formattedPrice"`
+	Currency         string   `json:"currency,omitempty"`
+	IsFree           bool     `json:"isFree"`
 	IconURL          string   `json:"iconUrl"`
 	Developer        string   `json:"developer"`
 	Description      string   `json:"description,omitempty"`
@@ -37,6 +40,7 @@ type itunesSearchResponse struct {
 		Version          string   `json:"version"`
 		Price            float64  `json:"price"`
 		FormattedPrice   string   `json:"formattedPrice"`
+		Currency         string   `json:"currency"`
 		ArtworkUrl100    string   `json:"artworkUrl100"`
 		ArtworkUrl512    string   `json:"artworkUrl512"`
 		ArtistName       string   `json:"artistName"`
@@ -116,13 +120,29 @@ func searchAppStore(term string, country string, limit int) ([]SearchAppResult, 
 			platforms = append(platforms, "iOS")
 		}
 
+		isFree := item.Price == 0 || strings.EqualFold(item.FormattedPrice, "Free") || strings.EqualFold(item.FormattedPrice, "Miễn phí")
+		formattedPrice := item.FormattedPrice
+		if formattedPrice == "" {
+			if isFree {
+				formattedPrice = "Free"
+			} else if item.Price > 0 {
+				if item.Currency != "" {
+					formattedPrice = fmt.Sprintf("%.2f %s", item.Price, item.Currency)
+				} else {
+					formattedPrice = fmt.Sprintf("$%.2f", item.Price)
+				}
+			}
+		}
+
 		out = append(out, SearchAppResult{
 			ID:               item.TrackID,
 			BundleID:         item.BundleID,
 			Name:             item.TrackName,
 			Version:          item.Version,
 			Price:            item.Price,
-			FormattedPrice:   item.FormattedPrice,
+			FormattedPrice:   formattedPrice,
+			Currency:         item.Currency,
+			IsFree:           isFree,
 			IconURL:          icon,
 			Developer:        item.ArtistName,
 			Description:      item.Description,
@@ -188,5 +208,144 @@ func handleAPISearch(w http.ResponseWriter, r *http.Request) {
 		"count":   len(results),
 		"results": results,
 		"country": country,
+	})
+}
+
+// handleAPICheckLicense checks whether the active or specified Apple ID owns a license
+// for the given app, without downloading any IPA bytes.
+func handleAPICheckLicense(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	appIDStr := strings.TrimSpace(r.URL.Query().Get("id"))
+	bundleID := strings.TrimSpace(r.URL.Query().Get("bundleId"))
+	accountID := strings.TrimSpace(r.URL.Query().Get("accountId"))
+
+	if appIDStr == "" && bundleID == "" {
+		jsonError(w, http.StatusBadRequest, "id or bundleId is required")
+		return
+	}
+
+	// 1. Resolve Account
+	var accRec *AccountRecord
+	if accountID != "" {
+		var ok bool
+		accRec, ok = accountsManager.GetAccount(accountID)
+		if !ok || accRec == nil {
+			jsonError(w, http.StatusBadRequest, "Tài khoản Apple ID không tồn tại")
+			return
+		}
+	} else {
+		var ok bool
+		accRec, ok = accountsManager.ActiveAccount()
+		if !ok || accRec == nil {
+			jsonResponse(w, http.StatusOK, map[string]any{
+				"success":       true,
+				"authenticated": false,
+				"owned":         false,
+				"message":       "Chưa đăng nhập tài khoản Apple ID",
+			})
+			return
+		}
+	}
+
+	appAcc := accRec.AsAppStoreAccount()
+	client, err := accountsManager.ClientForAccount(accRec.ID)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, "Khởi tạo App Store client thất bại: "+err.Error())
+		return
+	}
+
+	// 2. Resolve App Metadata
+	var target decryptTarget
+	if appIDStr != "" {
+		target.appId = appIDStr
+	} else {
+		target.bundleId = bundleID
+	}
+
+	app, err := lookupTargetApp(client, appAcc, target)
+	if err != nil {
+		jsonError(w, http.StatusNotFound, "Không tìm thấy ứng dụng trên App Store: "+err.Error())
+		return
+	}
+
+	isFree := app.Price == 0
+
+	// 3. Test License / Ownership via PrepareDownload (queries license authorization without downloading)
+	_, err = client.PrepareDownload(appAcc, app, "")
+	if err == nil {
+		jsonResponse(w, http.StatusOK, map[string]any{
+			"success":       true,
+			"authenticated": true,
+			"owned":         true,
+			"isFree":        isFree,
+			"price":         app.Price,
+			"status":        "owned",
+			"appId":         app.ID,
+			"bundleId":      app.BundleID,
+			"message":       "Tài khoản của bạn đã sở hữu ứng dụng này",
+		})
+		return
+	}
+
+	if errors.Is(err, appstore.ErrLicenseRequired) || strings.Contains(err.Error(), "9610") || strings.Contains(err.Error(), "license required") {
+		if isFree {
+			jsonResponse(w, http.StatusOK, map[string]any{
+				"success":        true,
+				"authenticated":  true,
+				"owned":          false,
+				"isFree":         true,
+				"price":          0,
+				"canAutoAcquire": true,
+				"status":         "free_unclaimed",
+				"appId":          app.ID,
+				"bundleId":       app.BundleID,
+				"message":        "Ứng dụng miễn phí chưa nhận. ipadecrypt sẽ tự động liên kết bản quyền khi tải.",
+			})
+		} else {
+			jsonResponse(w, http.StatusOK, map[string]any{
+				"success":        true,
+				"authenticated":  true,
+				"owned":          false,
+				"isFree":         false,
+				"price":          app.Price,
+				"canAutoAcquire": false,
+				"status":         "not_owned",
+				"appId":          app.ID,
+				"bundleId":       app.BundleID,
+				"message":        "Tài khoản chưa mua ứng dụng trả phí này trên App Store.",
+			})
+		}
+		return
+	}
+
+	if errors.Is(err, appstore.ErrModernDownloadUnsupported) {
+		jsonResponse(w, http.StatusOK, map[string]any{
+			"success":       true,
+			"authenticated": true,
+			"owned":         true,
+			"isFree":        isFree,
+			"price":         app.Price,
+			"status":        "owned_attestation",
+			"appId":         app.ID,
+			"bundleId":      app.BundleID,
+			"message":       "Tài khoản đã sở hữu bản quyền ứng dụng này.",
+		})
+		return
+	}
+
+	jsonResponse(w, http.StatusOK, map[string]any{
+		"success":       true,
+		"authenticated": true,
+		"owned":         false,
+		"isFree":        isFree,
+		"price":         app.Price,
+		"status":        "unknown",
+		"appId":         app.ID,
+		"bundleId":      app.BundleID,
+		"message":       err.Error(),
 	})
 }

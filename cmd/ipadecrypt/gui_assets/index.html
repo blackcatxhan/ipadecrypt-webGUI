@@ -332,6 +332,27 @@
               <span data-i18n="btn_search">Tìm kiếm</span>
             </button>
           </div>
+
+          <!-- Search Filters & Batch Check -->
+          <div id="search-filter-bar" class="search-filter-bar" style="display:none">
+            <div class="filter-pills">
+              <button id="search-filter-all" class="filter-pill active" onclick="setSearchFilter('all')">
+                <span data-i18n="filter_all">Tất cả</span> (<span id="count-all">0</span>)
+              </button>
+              <button id="search-filter-free" class="filter-pill" onclick="setSearchFilter('free')">
+                🟢 <span data-i18n="filter_free">Miễn phí</span> (<span id="count-free">0</span>)
+              </button>
+              <button id="search-filter-paid" class="filter-pill" onclick="setSearchFilter('paid')">
+                🟠 <span data-i18n="filter_paid">Trả phí</span> (<span id="count-paid">0</span>)
+              </button>
+            </div>
+            <button id="btn-check-all-paid" class="btn btn-outline btn-xs" style="display:none" onclick="checkAllPaidOwnership()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <span data-i18n="btn_check_all_paid">Kiểm tra sở hữu các app trả phí</span>
+            </button>
+          </div>
         </div>
       </div>
 

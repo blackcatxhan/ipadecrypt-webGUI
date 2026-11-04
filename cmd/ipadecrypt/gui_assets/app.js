@@ -57,6 +57,19 @@ const i18n = {
     search_no_results: 'Không tìm thấy ứng dụng nào phù hợp.',
     btn_decrypt: 'Giải mã',
     btn_versions: 'Xem phiên bản',
+    price_free: 'Miễn phí',
+    price_paid: 'Trả phí',
+    free_license_note: 'Miễn phí • Tự động cấp quyền khi tải',
+    btn_check_license: 'Kiểm tra đã mua chưa?',
+    license_checking: 'Đang kiểm tra quyền sở hữu...',
+    license_owned: 'Đã mua (Sở hữu)',
+    license_not_owned: 'Chưa mua trên Apple ID này',
+    license_not_owned_hint: 'Cần mua app trên App Store bằng tài khoản hiện tại trước khi giải mã.',
+    filter_all: 'Tất cả',
+    filter_free: 'Miễn phí',
+    filter_paid: 'Trả phí',
+    btn_check_all_paid: 'Kiểm tra sở hữu các app trả phí',
+    checking_all_paid: 'Đang kiểm tra...',
 
     versions_title: 'Lịch sử phiên bản App Store',
     versions_desc: 'Xem toàn bộ các bản phát hành lịch sử của ứng dụng và giải mã bản cũ tùy ý (lệnh ipadecrypt versions).',
@@ -188,6 +201,19 @@ const i18n = {
     search_no_results: 'No apps found matching your query.',
     btn_decrypt: 'Decrypt',
     btn_versions: 'Versions',
+    price_free: 'Free',
+    price_paid: 'Paid',
+    free_license_note: 'Free • Auto-licensed on download',
+    btn_check_license: 'Check if purchased?',
+    license_checking: 'Checking license...',
+    license_owned: 'Purchased (Owned)',
+    license_not_owned: 'Not purchased on this Apple ID',
+    license_not_owned_hint: 'Must purchase on App Store with this account before decrypting.',
+    filter_all: 'All',
+    filter_free: 'Free',
+    filter_paid: 'Paid',
+    btn_check_all_paid: 'Check ownership for paid apps',
+    checking_all_paid: 'Checking...',
 
     versions_title: 'App Store Version History',
     versions_desc: 'Browse all historical releases and decrypt older versions on-demand (ipadecrypt versions).',
@@ -1068,18 +1094,48 @@ async function doSearch() {
   const loading = document.getElementById('search-loading');
   const empty = document.getElementById('search-empty');
   const grid = document.getElementById('search-results-grid');
+  const filterBar = document.getElementById('search-filter-bar');
 
   if (loading) loading.style.display = 'block';
   if (empty) empty.style.display = 'none';
   if (grid) grid.style.display = 'none';
+  if (filterBar) filterBar.style.display = 'none';
 
   try {
-    const res = await fetch(`/api/search?term=${encodeURIComponent(term)}&country=${country}`);
+    let url = `/api/search?term=${encodeURIComponent(term)}&country=${country}`;
+    if (state.activeAccount) url += `&accountId=${state.activeAccount.id}`;
+    const res = await fetch(url);
     const data = await res.json();
 
     if (loading) loading.style.display = 'none';
 
     if (data.success && data.results && data.results.length > 0) {
+      state.lastSearchResults = data.results;
+      state.searchFilter = 'all';
+      if (!state.ownershipCache) state.ownershipCache = {};
+
+      // Calculate counts
+      const freeCount = data.results.filter(a => a.isFree).length;
+      const paidCount = data.results.filter(a => !a.isFree).length;
+
+      const countAll = document.getElementById('count-all');
+      const countFree = document.getElementById('count-free');
+      const countPaid = document.getElementById('count-paid');
+      if (countAll) countAll.textContent = data.results.length;
+      if (countFree) countFree.textContent = freeCount;
+      if (countPaid) countPaid.textContent = paidCount;
+
+      document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+      const allPill = document.getElementById('search-filter-all');
+      if (allPill) allPill.classList.add('active');
+
+      const btnCheckAll = document.getElementById('btn-check-all-paid');
+      if (btnCheckAll) {
+        btnCheckAll.style.display = paidCount > 0 ? 'inline-flex' : 'none';
+      }
+
+      if (filterBar) filterBar.style.display = 'flex';
+
       renderSearchResults(data.results);
       if (grid) grid.style.display = 'grid';
     } else {
@@ -1095,30 +1151,94 @@ async function doSearch() {
   }
 }
 
+function setSearchFilter(filter) {
+  state.searchFilter = filter;
+  document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.getElementById(`search-filter-${filter}`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  if (state.lastSearchResults) {
+    renderSearchResults(state.lastSearchResults);
+  }
+}
+
 function renderSearchResults(results) {
   const grid = document.getElementById('search-results-grid');
   if (!grid) return;
 
-  grid.innerHTML = results.map(app => {
+  const filter = state.searchFilter || 'all';
+  const filtered = results.filter(app => {
+    if (filter === 'free') return app.isFree;
+    if (filter === 'paid') return !app.isFree;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="center-state col-span-full py-6"><p class="text-secondary text-sm">${t('search_no_results')}</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(app => {
     const icon = app.iconUrl || '';
     const platforms = (app.platforms || ['iOS']).map(p => `<span class="badge badge-primary">${p}</span>`).join(' ');
 
+    const priceBadge = app.isFree
+      ? `<span class="badge badge-success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg> ${t('price_free')}</span>`
+      : `<span class="badge badge-price"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v12M15 9.5a3.5 3.5 0 1 0-7 0 3.5 3.5 0 0 0 7 0z"></path></svg> ${escapeHtml(app.formattedPrice || ('$' + app.price))}</span>`;
+
+    let licenseHtml = '';
+    const cached = state.ownershipCache && state.ownershipCache[app.id];
+    if (cached) {
+      if (cached.owned) {
+        licenseHtml = `<span class="badge badge-success text-xs flex-gap" title="${escapeHtml(cached.message || '')}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> <b>${t('license_owned')}</b></span>`;
+      } else {
+        licenseHtml = `
+          <span class="badge badge-danger text-xs flex-gap" title="${escapeHtml(cached.message || '')}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> ${t('license_not_owned')}</span>
+          <div class="text-xs text-danger mt-1" style="font-size:0.72rem;line-height:1.2;">${t('license_not_owned_hint')}</div>
+        `;
+      }
+    } else if (app.isFree) {
+      licenseHtml = `
+        <span class="text-xs text-secondary flex-gap" style="font-size:0.73rem;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+          ${t('free_license_note')}
+        </span>
+      `;
+    } else {
+      licenseHtml = `
+        <button class="btn btn-outline btn-xs" id="btn-check-lic-${app.id}" onclick="checkAppOwnership(${app.id}, '${escapeHtml(app.bundleId)}')">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span>${t('btn_check_license')}</span>
+        </button>
+      `;
+    }
+
     return `
-      <div class="app-card">
+      <div class="app-card" id="app-card-${app.id}">
         <div class="app-card-header">
           <img class="app-icon" src="${icon}" alt="${escapeHtml(app.name)}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22currentColor%22><rect width=%2218%22 height=%2218%22 x=%223%22 y=%223%22 rx=%224%22/></svg>'">
           <div class="app-info">
             <h4 class="app-title" title="${escapeHtml(app.name)}">${escapeHtml(app.name)}</h4>
-            <span class="app-dev">${escapeHtml(app.developer || '')}</span>
+            <span class="app-dev" title="${escapeHtml(app.developer || '')}">${escapeHtml(app.developer || '')}</span>
             <div class="app-meta">
               <span>v${escapeHtml(app.version || '')}</span>
               <span>•</span>
-              <span class="font-mono">${escapeHtml(app.bundleId)}</span>
+              <span class="font-mono app-bundle-id" title="${escapeHtml(app.bundleId)}">${escapeHtml(app.bundleId)}</span>
             </div>
-            <div class="mt-2 flex-gap">${platforms}</div>
           </div>
         </div>
-        <div class="app-card-actions mt-3 flex-gap">
+
+        <div class="app-card-body">
+          <div class="app-badges-row">
+            ${priceBadge}
+            ${platforms}
+          </div>
+          <div class="app-license-status" id="license-box-${app.id}">
+            ${licenseHtml}
+          </div>
+        </div>
+
+        <div class="app-card-actions">
           <button class="btn btn-primary btn-xs flex-1" onclick="selectAppForDecrypt('${escapeHtml(app.bundleId)}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -1133,6 +1253,71 @@ function renderSearchResults(results) {
       </div>
     `;
   }).join('');
+}
+
+async function checkAppOwnership(appId, bundleId) {
+  const box = document.getElementById(`license-box-${appId}`);
+  if (box) {
+    box.innerHTML = `<span class="spinner-sm"></span> <span class="text-xs text-secondary">${t('license_checking')}</span>`;
+  }
+
+  let url = `/api/app/check-license?id=${appId}&bundleId=${encodeURIComponent(bundleId)}`;
+  if (state.activeAccount) url += `&accountId=${state.activeAccount.id}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!state.ownershipCache) state.ownershipCache = {};
+    state.ownershipCache[appId] = data;
+
+    if (!box) return;
+
+    if (!data.authenticated) {
+      box.innerHTML = `<span class="badge badge-warning text-xs flex-gap">${t('auth_no_account')}</span>`;
+      return;
+    }
+
+    if (data.owned) {
+      box.innerHTML = `<span class="badge badge-success text-xs flex-gap" title="${escapeHtml(data.message || '')}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> <b>${t('license_owned')}</b></span>`;
+    } else {
+      box.innerHTML = `
+        <span class="badge badge-danger text-xs flex-gap" title="${escapeHtml(data.message || '')}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> ${t('license_not_owned')}</span>
+        <div class="text-xs text-danger mt-1" style="font-size:0.72rem;line-height:1.2;">${t('license_not_owned_hint')}</div>
+      `;
+    }
+  } catch (err) {
+    if (box) {
+      box.innerHTML = `<span class="text-xs text-danger">${escapeHtml(err.message)}</span>`;
+    }
+  }
+}
+
+async function checkAllPaidOwnership() {
+  if (!state.lastSearchResults) return;
+  const paidApps = state.lastSearchResults.filter(a => !a.isFree);
+  if (paidApps.length === 0) return;
+
+  const btn = document.getElementById('btn-check-all-paid');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-sm"></span> ${t('checking_all_paid')}`;
+  }
+
+  for (const app of paidApps) {
+    await checkAppOwnership(app.id, app.bundleId);
+    await new Promise(r => setTimeout(r, 200));
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <span>${t('btn_check_all_paid')}</span>
+    `;
+  }
 }
 
 function selectAppForDecrypt(bundleId) {

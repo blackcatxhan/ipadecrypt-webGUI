@@ -319,9 +319,10 @@ body {
 
 .cards-grid, .apps-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 14px;
   margin-top: 16px;
+  width: 100%;
 }
 
 /* BUTTONS */
@@ -565,11 +566,15 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 14px;
+  padding: 13px 14px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   transition: var(--transition);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .app-card:hover {
@@ -582,11 +587,13 @@ body {
   display: flex;
   gap: 12px;
   align-items: flex-start;
+  min-width: 0;
+  width: 100%;
 }
 
 .app-icon {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 11px;
   object-fit: cover;
   background: var(--bg-elevated);
@@ -597,10 +604,11 @@ body {
 .app-info {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .app-title {
-  font-size: 0.95rem;
+  font-size: 0.93rem;
   font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
@@ -610,7 +618,7 @@ body {
 }
 
 .app-dev {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   display: block;
   white-space: nowrap;
@@ -620,11 +628,67 @@ body {
 }
 
 .app-meta {
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
-  margin-top: 4px;
+  margin-top: 3px;
   display: flex;
   gap: 6px;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.app-bundle-id {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.app-card-body {
+  margin-top: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.app-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  width: 100%;
+}
+
+.app-license-status {
+  min-height: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  min-width: 0;
+  width: 100%;
+  word-break: break-word;
+}
+
+.app-license-status .badge {
+  white-space: normal;
+  text-align: left;
+  line-height: 1.25;
+  padding: 3px 8px;
+}
+
+.app-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border-color);
   align-items: center;
 }
 
@@ -760,6 +824,65 @@ body {
   background: var(--danger-bg);
   color: var(--danger);
 }
+
+.badge-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-price {
+  background: rgba(245, 158, 11, 0.16);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* SEARCH FILTER BAR & OWNERSHIP */
+.search-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-pill {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.filter-pill:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.filter-pill.active {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
 
 .badge-cred-ok {
   background: var(--success-bg);

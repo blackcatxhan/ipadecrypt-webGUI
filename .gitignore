@@ -1,5 +1,6 @@
 *.ipa
 *.exe
+*.exe~
 .claude
 dist/
 .grepai/
