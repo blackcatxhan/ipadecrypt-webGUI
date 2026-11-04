@@ -246,7 +246,19 @@ go build -trimpath -ldflags="-s -w" -o ipadecrypt ./cmd/ipadecrypt
 
 ---
 
-### Step 5: Managing Files & 1-Click iOS Installation
+### Step 5: App Watchlist & Automatic Update Tracking
+1. You can bookmark any application (🔖 Bookmark button):
+   - From search results in the **"App Store Search"** tab.
+   - Or from local decrypted files in the **"Decrypted Files"** tab.
+2. Go to the **"Watchlist"** (`Theo dõi (Watchlist)`) tab:
+   - WebGUI compares the latest release available on the App Store against your locally decrypted IPA in `./decrypted`.
+   - If a newer version is released on the App Store, the card highlights an **`UPDATE AVAILABLE`** badge and the navigation tab displays a red update counter.
+   - Click **"Download & Decrypt Update"** to switch to the decrypt screen with the latest version pre-configured in 1 click!
+   - Click **"Check for Updates Now"** to scan Apple's servers for all tracked apps at once.
+
+---
+
+### Step 6: Managing Files & 1-Click iOS Installation
 1. Go to the **"Decrypted Files"** (`Tệp đã giải mã`) tab.
 2. Here you can:
    - Click **"Open Folder in Explorer"** to open the `./decrypted` directory.

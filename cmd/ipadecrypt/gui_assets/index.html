@@ -80,6 +80,14 @@
         <span data-i18n="tab_versions">Lịch sử phiên bản</span>
       </button>
 
+      <button class="tab-btn" data-tab="bookmarks" onclick="switchTab('bookmarks')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span data-i18n="tab_bookmarks">Theo dõi (Watchlist)</span>
+        <span id="bookmarks-update-badge" class="badge badge-danger" style="display:none">0</span>
+      </button>
+
       <button class="tab-btn" data-tab="device" onclick="switchTab('device')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
@@ -411,6 +419,52 @@
             </thead>
             <tbody id="versions-tbody"></tbody>
           </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: Device & Credential Minting -->
+    <!-- TAB: Bookmarks & Watchlist -->
+    <section id="tab-bookmarks" class="tab-content">
+      <div class="card mb-3">
+        <div class="card-header flex-between">
+          <div>
+            <h3 class="card-title" data-i18n="bookmarks_title">Ứng dụng theo dõi (Watchlist)</h3>
+            <p class="card-desc" data-i18n="bookmarks_desc">Theo dõi các ứng dụng quan trọng và tự động phát hiện khi App Store có bản cập nhật mới so với bản đã giải mã.</p>
+          </div>
+          <div class="flex-gap">
+            <button id="btn-bookmarks-check" class="btn btn-primary btn-sm" onclick="checkBookmarksUpdates()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              <span data-i18n="btn_check_updates">Kiểm tra bản mới ngay</span>
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="loadBookmarks()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+              </svg>
+              <span data-i18n="btn_refresh">Làm mới</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div id="bookmarks-loading" class="center-state" style="display:none">
+            <div class="spinner"></div>
+            <p class="mt-3 text-secondary text-sm" data-i18n="bookmarks_loading">Đang tải danh sách theo dõi...</p>
+          </div>
+
+          <div id="bookmarks-empty" class="center-state" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="44" height="44" style="margin:0 auto 12px; color:var(--text-muted)">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <h3 class="text-base font-bold" data-i18n="bookmarks_empty_title">Chưa có ứng dụng nào trong danh sách theo dõi</h3>
+            <p class="text-secondary text-sm mt-1" data-i18n="bookmarks_empty_desc">Khi tìm kiếm ứng dụng trên App Store hoặc trong danh sách file đã giải mã, nhấn biểu tượng 🔖 Bookmark để theo dõi cập nhật.</p>
+          </div>
+
+          <div id="bookmarks-grid" class="cards-grid" style="display:none"></div>
         </div>
       </div>
     </section>

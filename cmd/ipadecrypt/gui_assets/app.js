@@ -143,7 +143,29 @@ const i18n = {
     lbl_help_effect: 'Tác dụng & Ý nghĩa:',
     lbl_help_usage: 'Khi nào nên dùng:',
     lbl_help_notes: 'Lưu ý:',
-    btn_close: 'Đóng'
+    btn_close: 'Đóng',
+
+    tab_bookmarks: 'Theo dõi (Watchlist)',
+    bookmarks_title: 'Ứng dụng theo dõi (Watchlist)',
+    bookmarks_desc: 'Theo dõi các ứng dụng quan trọng và tự động phát hiện khi App Store có bản cập nhật mới so với bản đã giải mã.',
+    btn_check_updates: 'Kiểm tra bản mới ngay',
+    checking_updates: 'Đang kiểm tra...',
+    bookmarks_loading: 'Đang tải danh sách theo dõi...',
+    bookmarks_empty_title: 'Chưa có ứng dụng nào trong danh sách theo dõi',
+    bookmarks_empty_desc: 'Khi tìm kiếm ứng dụng trên App Store hoặc trong danh sách file đã giải mã, nhấn biểu tượng 🔖 Bookmark để theo dõi cập nhật.',
+    btn_add_bookmark: 'Thêm vào theo dõi',
+    btn_remove_bookmark: 'Bỏ theo dõi',
+    bookmark_added: 'Đã thêm vào danh sách theo dõi',
+    bookmark_removed: 'Đã xóa khỏi danh sách theo dõi',
+    status_has_update: 'CÓ BẢN MỚI',
+    status_up_to_date: 'Đã mới nhất',
+    status_not_decrypted: 'Chưa giải mã',
+    lbl_decrypted_ver: 'Bản đã giải mã:',
+    lbl_store_ver: 'Bản App Store:',
+    lbl_last_checked: 'Kiểm tra lúc:',
+    btn_decrypt_new: 'Tải & Giải mã bản mới',
+    updates_found_toast: 'Phát hiện {count} ứng dụng có bản cập nhật mới!',
+    no_updates_toast: 'Tất cả ứng dụng theo dõi đều đang ở bản mới nhất.'
   },
   en: {
     window_title: 'ipadecrypt webGUI — FairPlay App Store Decrypter',
@@ -287,7 +309,29 @@ const i18n = {
     lbl_help_effect: 'Description & Effect:',
     lbl_help_usage: 'Recommended Usage:',
     lbl_help_notes: 'Important Notes:',
-    btn_close: 'Close'
+    btn_close: 'Close',
+
+    tab_bookmarks: 'Watchlist',
+    bookmarks_title: 'App Watchlist',
+    bookmarks_desc: 'Track important apps and automatically monitor when newer releases become available on the App Store.',
+    btn_check_updates: 'Check for Updates Now',
+    checking_updates: 'Checking...',
+    bookmarks_loading: 'Loading watchlist...',
+    bookmarks_empty_title: 'No apps in watchlist yet',
+    bookmarks_empty_desc: 'Click the 🔖 Bookmark button on search results or decrypted files to monitor them for new updates.',
+    btn_add_bookmark: 'Add to Watchlist',
+    btn_remove_bookmark: 'Remove from Watchlist',
+    bookmark_added: 'Added to watchlist',
+    bookmark_removed: 'Removed from watchlist',
+    status_has_update: 'UPDATE AVAILABLE',
+    status_up_to_date: 'Up to Date',
+    status_not_decrypted: 'Not Decrypted',
+    lbl_decrypted_ver: 'Decrypted Ver:',
+    lbl_store_ver: 'Store Ver:',
+    lbl_last_checked: 'Checked:',
+    btn_decrypt_new: 'Download & Decrypt Update',
+    updates_found_toast: 'Found {count} apps with new updates!',
+    no_updates_toast: 'All bookmarked apps are up to date.'
   }
 };
 
@@ -438,7 +482,9 @@ const state = {
   activeAccount: null,
   activeJob: null,
   jobPollTimer: null,
-  selectedLocalFile: null
+  selectedLocalFile: null,
+  bookmarks: [],
+  bookmarkedBundleIds: new Set()
 };
 
 // --- Initialization ---
@@ -449,6 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadAccounts();
   loadDeviceConfig();
   loadDecryptedFiles();
+  loadBookmarks(false);
 
   // Setup drag and drop for local IPA file
   const dropZone = document.getElementById('ipa-drop-zone');
@@ -537,6 +584,12 @@ function applyLanguage(lang) {
   renderAccountPill();
   renderAccountsList();
   renderMintTabAccount();
+  if (state.bookmarks && state.bookmarks.length > 0) {
+    updateBookmarksBadge(state.bookmarks.filter(b => b.hasUpdate).length);
+    if (state.activeTab === 'bookmarks') {
+      renderBookmarks(state.bookmarks);
+    }
+  }
 }
 
 function renderGuide() {
@@ -610,6 +663,7 @@ function switchTab(tabName) {
 
   if (tabName === 'files') loadDecryptedFiles();
   if (tabName === 'account') loadAccounts();
+  if (tabName === 'bookmarks') loadBookmarks();
 }
 
 // --- Toast Notifications ---
@@ -1186,6 +1240,8 @@ function renderSearchResults(results) {
       ? `<span class="badge badge-success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg> ${t('price_free')}</span>`
       : `<span class="badge badge-price"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v12M15 9.5a3.5 3.5 0 1 0-7 0 3.5 3.5 0 0 0 7 0z"></path></svg> ${escapeHtml(app.formattedPrice || ('$' + app.price))}</span>`;
 
+    const isBookmarked = state.bookmarkedBundleIds && state.bookmarkedBundleIds.has(app.bundleId);
+
     let licenseHtml = '';
     const cached = state.ownershipCache && state.ownershipCache[app.id];
     if (cached) {
@@ -1226,6 +1282,11 @@ function renderSearchResults(results) {
               <span class="font-mono app-bundle-id" title="${escapeHtml(app.bundleId)}">${escapeHtml(app.bundleId)}</span>
             </div>
           </div>
+          <button class="bookmark-btn ${isBookmarked ? 'active' : ''}" data-bundle="${escapeHtml(app.bundleId)}" title="${isBookmarked ? t('btn_remove_bookmark') : t('btn_add_bookmark')}" onclick="toggleBookmarkFromSearch('${escapeHtml(app.bundleId)}', event)">
+            <svg viewBox="0 0 24 24" fill="${isBookmarked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </button>
         </div>
 
         <div class="app-card-body">
@@ -1533,6 +1594,294 @@ async function startMintCredential(specificAccountId) {
   }
 }
 
+// --- Watchlist / Bookmarks ---
+
+async function loadBookmarks(showLoading = true) {
+  const loading = document.getElementById('bookmarks-loading');
+  const empty = document.getElementById('bookmarks-empty');
+  const grid = document.getElementById('bookmarks-grid');
+
+  if (showLoading && state.activeTab === 'bookmarks') {
+    if (loading) loading.style.display = 'block';
+    if (empty) empty.style.display = 'none';
+    if (grid) grid.style.display = 'none';
+  }
+
+  try {
+    const res = await fetch('/api/bookmarks');
+    const data = await res.json();
+    if (data.success) {
+      state.bookmarks = data.bookmarks || [];
+      state.bookmarkedBundleIds = new Set(state.bookmarks.map(b => b.bundleId));
+      updateBookmarksBadge(data.updatesCount || 0);
+
+      if (state.activeTab === 'bookmarks') {
+        renderBookmarks(state.bookmarks);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load bookmarks:', err);
+  } finally {
+    if (loading && state.activeTab === 'bookmarks') {
+      loading.style.display = 'none';
+    }
+  }
+}
+
+function updateBookmarksBadge(count) {
+  const badge = document.getElementById('bookmarks-update-badge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = `${count} ${state.lang === 'vi' ? 'mới' : 'new'}`;
+    badge.style.display = 'inline-flex';
+    badge.title = `${count} ${state.lang === 'vi' ? 'ứng dụng có bản cập nhật mới' : 'apps have updates available'}`;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderBookmarks(bookmarks) {
+  const empty = document.getElementById('bookmarks-empty');
+  const grid = document.getElementById('bookmarks-grid');
+  if (!grid || !empty) return;
+
+  if (!bookmarks || bookmarks.length === 0) {
+    empty.style.display = 'block';
+    grid.style.display = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  grid.style.display = 'grid';
+
+  grid.innerHTML = bookmarks.map(app => {
+    const hasUpdate = !!app.hasUpdate;
+    const hasLocal = !!app.lastDecryptedVersion;
+
+    let statusPill = '';
+    if (hasUpdate) {
+      statusPill = `
+        <span class="badge badge-update-alert pulse-glow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+          <b>${t('status_has_update')}</b>
+        </span>
+      `;
+    } else if (hasLocal) {
+      statusPill = `
+        <span class="badge badge-success text-xs">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          ${t('status_up_to_date')}
+        </span>
+      `;
+    } else {
+      statusPill = `<span class="badge badge-secondary text-xs">${t('status_not_decrypted')}</span>`;
+    }
+
+    const priceBadge = app.isFree
+      ? `<span class="badge badge-success">${t('price_free')}</span>`
+      : `<span class="badge badge-price">${escapeHtml(app.formattedPrice || ('$' + (app.price || '')))}</span>`;
+
+    const icon = app.iconUrl || '';
+
+    return `
+      <div class="app-card bookmark-card ${hasUpdate ? 'has-update-border' : ''}" id="bookmark-card-${escapeHtml(app.bundleId)}">
+        <div class="app-card-header">
+          <img class="app-icon" src="${icon}" alt="${escapeHtml(app.name)}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22currentColor%22><rect width=%2218%22 height=%2218%22 x=%223%22 y=%223%22 rx=%224%22/></svg>'">
+          <div class="app-info">
+            <h4 class="app-title" title="${escapeHtml(app.name)}">${escapeHtml(app.name || app.bundleId)}</h4>
+            <span class="app-dev" title="${escapeHtml(app.artistName || app.developer || '')}">${escapeHtml(app.artistName || app.developer || '')}</span>
+            <div class="app-meta">
+              <span class="font-mono app-bundle-id" title="${escapeHtml(app.bundleId)}">${escapeHtml(app.bundleId)}</span>
+            </div>
+          </div>
+          <button class="bookmark-btn active" title="${t('btn_remove_bookmark')}" onclick="removeBookmark('${escapeHtml(app.bundleId)}')">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="app-card-body">
+          <div class="app-badges-row">
+            ${statusPill}
+            ${priceBadge}
+          </div>
+
+          <div class="bookmark-version-box">
+            <div class="version-row">
+              <span class="text-xs text-secondary">${t('lbl_decrypted_ver')}</span>
+              <span class="font-mono text-xs font-semibold ${hasLocal ? 'text-primary' : 'text-muted'}">
+                ${hasLocal ? ('v' + escapeHtml(app.lastDecryptedVersion)) : t('status_not_decrypted')}
+              </span>
+            </div>
+            <div class="version-row">
+              <span class="text-xs text-secondary">${t('lbl_store_ver')}</span>
+              <span class="font-mono text-xs font-bold ${hasUpdate ? 'text-success' : 'text-primary'}">
+                v${escapeHtml(app.latestStoreVersion || 'N/A')}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="app-card-actions">
+          <button class="btn ${hasUpdate ? 'btn-primary' : 'btn-outline'} btn-xs flex-1" onclick="selectAppForDecrypt('${escapeHtml(app.bundleId)}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+            </svg>
+            ${hasUpdate ? t('btn_decrypt_new') : t('btn_decrypt')}
+          </button>
+          <button class="btn btn-outline btn-xs" onclick="openVersionsFor('${escapeHtml(app.bundleId)}')">
+            ${t('btn_versions')}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function toggleBookmark(payload) {
+  try {
+    const res = await fetch('/api/bookmarks/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (data.bookmarked) {
+        state.bookmarkedBundleIds.add(payload.bundleId);
+        showToast(t('bookmark_added'), 'success');
+      } else {
+        state.bookmarkedBundleIds.delete(payload.bundleId);
+        showToast(t('bookmark_removed'), 'info');
+      }
+
+      updateBookmarkButtonStates(payload.bundleId, data.bookmarked);
+      loadBookmarks(false);
+    } else {
+      showToast(data.error || 'Failed to update bookmark', 'danger');
+    }
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
+async function toggleBookmarkFromSearch(bundleId, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  const app = (state.lastSearchResults || []).find(a => a.bundleId === bundleId);
+  const payload = {
+    bundleId: bundleId,
+    name: app ? app.name : '',
+    id: app ? app.id : 0,
+    artistName: app ? (app.developer || '') : '',
+    iconUrl: app ? (app.iconUrl || '') : '',
+    price: app ? app.price : 0,
+    formattedPrice: app ? (app.formattedPrice || '') : '',
+    latestStoreVersion: app ? (app.version || '') : '',
+    isFree: app ? app.isFree : false
+  };
+
+  await toggleBookmark(payload);
+}
+
+async function toggleBookmarkFromLocal(bundleId, name) {
+  const payload = {
+    bundleId: bundleId,
+    name: name
+  };
+  await toggleBookmark(payload);
+}
+
+async function removeBookmark(bundleId) {
+  try {
+    const res = await fetch('/api/bookmarks/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bundleId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      state.bookmarkedBundleIds.delete(bundleId);
+      showToast(t('bookmark_removed'), 'info');
+      updateBookmarkButtonStates(bundleId, false);
+      loadBookmarks(false);
+    } else {
+      showToast(data.error || 'Failed to remove bookmark', 'danger');
+    }
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
+async function checkBookmarksUpdates() {
+  const btn = document.getElementById('btn-bookmarks-check');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-sm"></span> <span>${t('checking_updates')}</span>`;
+  }
+
+  try {
+    const res = await fetch('/api/bookmarks/check-updates', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      state.bookmarks = data.bookmarks || [];
+      state.bookmarkedBundleIds = new Set(state.bookmarks.map(b => b.bundleId));
+      updateBookmarksBadge(data.updatesCount || 0);
+      renderBookmarks(state.bookmarks);
+
+      if (data.updatesCount > 0) {
+        const msg = t('updates_found_toast').replace('{count}', data.updatesCount);
+        showToast(msg, 'warning');
+      } else {
+        showToast(t('no_updates_toast'), 'success');
+      }
+    } else {
+      showToast(data.error || 'Check failed', 'danger');
+    }
+  } catch (err) {
+    showToast(err.message, 'danger');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        <span>${t('btn_check_updates')}</span>
+      `;
+    }
+  }
+}
+
+function updateBookmarkButtonStates(bundleId, isBookmarked) {
+  // Update search cards
+  document.querySelectorAll(`.bookmark-btn[data-bundle="${bundleId}"]`).forEach(btn => {
+    btn.classList.toggle('active', isBookmarked);
+    btn.title = isBookmarked ? t('btn_remove_bookmark') : t('btn_add_bookmark');
+    const svg = btn.querySelector('svg');
+    if (svg) svg.setAttribute('fill', isBookmarked ? 'currentColor' : 'none');
+  });
+
+  // Update files table
+  document.querySelectorAll(`.btn-bookmark-file[data-bundle="${bundleId}"]`).forEach(btn => {
+    btn.classList.toggle('active', isBookmarked);
+    btn.classList.toggle('text-warning', isBookmarked);
+    btn.title = isBookmarked ? t('btn_remove_bookmark') : t('btn_add_bookmark');
+    const svg = btn.querySelector('svg');
+    if (svg) svg.setAttribute('fill', isBookmarked ? 'currentColor' : 'none');
+  });
+}
+
 // --- Decrypted Files Browser ---
 async function loadDecryptedFiles() {
   try {
@@ -1577,6 +1926,16 @@ function renderFilesTable(files) {
       <td class="text-sm text-secondary">${f.modifiedDate}</td>
       <td>
         <div class="flex-gap">
+          ${f.bundleId ? `
+            <button class="btn btn-outline btn-xs btn-icon btn-bookmark-file ${state.bookmarkedBundleIds && state.bookmarkedBundleIds.has(f.bundleId) ? 'active text-warning' : ''}" 
+                    data-bundle="${escapeHtml(f.bundleId)}" 
+                    title="${state.bookmarkedBundleIds && state.bookmarkedBundleIds.has(f.bundleId) ? t('btn_remove_bookmark') : t('btn_add_bookmark')}" 
+                    onclick="toggleBookmarkFromLocal('${escapeHtml(f.bundleId)}', '${escapeHtml(f.name)}')">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="${state.bookmarkedBundleIds && state.bookmarkedBundleIds.has(f.bundleId) ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </button>
+          ` : ''}
           <a class="btn btn-outline btn-xs" href="/api/files/download?name=${encodeURIComponent(f.name)}" download>
             ${t('btn_download')}
           </a>

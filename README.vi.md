@@ -243,7 +243,19 @@ go build -trimpath -ldflags="-s -w" -o ipadecrypt ./cmd/ipadecrypt
 
 ---
 
-### Bước 5: Quản lý file đã giải mã & Cài đặt vào máy
+### Bước 5: Theo dõi ứng dụng & Tự động phát hiện bản mới (Watchlist)
+1. Bạn có thể đánh dấu theo dõi (Bookmark 🔖) bất kỳ ứng dụng nào:
+   - Từ kết quả tìm kiếm trên thẻ **"Tìm kiếm App Store"**.
+   - Hoặc từ danh sách các file đã giải mã trong thẻ **"Tệp đã giải mã"**.
+2. Chuyển sang thẻ **"Theo dõi (Watchlist)"**:
+   - WebGUI tự động so sánh phiên bản mới nhất trên App Store với phiên bản IPA bạn đã giải mã lưu trong thư mục máy tính.
+   - Nếu App Store phát hành bản mới hơn, ứng dụng sẽ được gắn nhãn nổi bật: **`CÓ BẢN MỚI`** và hiển thị số lượng bản cập nhật trên thanh điều hướng.
+   - Nhấn **"Tải & Giải mã bản mới"** để tự động nạp sang màn hình giải mã bản mới nhất chỉ với 1 cú click!
+   - Nhấn **"Kiểm tra bản mới ngay"** để cập nhật trạng thái mới nhất từ App Store cho toàn bộ danh sách theo dõi.
+
+---
+
+### Bước 6: Quản lý file đã giải mã & Cài đặt vào máy
 1. Chuyển sang thẻ **"Tệp đã giải mã"** (`Decrypted Files`).
 2. Tại đây bạn có thể:
    - Nhấn **"Mở thư mục trong Explorer"** để truy cập ngay thư mục `./decrypted`.

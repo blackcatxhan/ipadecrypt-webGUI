@@ -1058,3 +1058,94 @@ body {
 .bg-elevated { background: var(--bg-elevated); }
 .bg-input { background: var(--bg-input); }
 .block { display: block; }
+
+/* WATCHLIST & BOOKMARKS */
+.bookmark-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.bookmark-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--accent-primary);
+}
+
+.bookmark-btn.active {
+  color: #f59e0b;
+}
+
+.btn-icon {
+  padding: 4px 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bookmark-card {
+  position: relative;
+}
+
+.has-update-border {
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15) !important;
+}
+
+.badge-update-alert {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+.pulse-glow {
+  animation: pulseAlert 2.2s infinite ease-in-out;
+}
+
+@keyframes pulseAlert {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.82;
+    transform: scale(1.02);
+  }
+}
+
+.bookmark-version-box {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.version-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#bookmarks-update-badge {
+  padding: 1px 6px;
+  font-size: 0.68rem;
+  border-radius: var(--radius-full);
+  margin-left: 6px;
+  font-weight: 700;
+  background: var(--danger);
+  color: #ffffff;
+}
+

@@ -115,6 +115,11 @@ func guiHandler(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	// Initialize Bookmarks store
+	if _, err := initBookmarksStore(paths.Root); err != nil {
+		tui.Err("Lỗi khởi tạo danh sách theo dõi: %v", err)
+	}
+
 	// Setup HTTP Router
 	mux := http.NewServeMux()
 
@@ -161,6 +166,12 @@ func guiHandler(cmd *cobra.Command, args []string) {
 	mux.HandleFunc("/api/app/check-license", handleAPICheckLicense)
 	mux.HandleFunc("/api/versions", handleAPIVersions)
 	mux.HandleFunc("/api/version-metadata", handleAPIVersionMetadata)
+
+	// Bookmarks / Watchlist
+	mux.HandleFunc("/api/bookmarks", handleAPIBookmarks)
+	mux.HandleFunc("/api/bookmarks/toggle", handleAPIBookmarksToggle)
+	mux.HandleFunc("/api/bookmarks/remove", handleAPIBookmarksRemove)
+	mux.HandleFunc("/api/bookmarks/check-updates", handleAPIBookmarksCheckUpdates)
 
 	// Decryption & Jobs
 	mux.HandleFunc("/api/decrypt", handleAPIDecrypt)
